@@ -1,7 +1,9 @@
 from django.shortcuts import render
-from rest_framework.authtoken.views import ObtainAuthToken, APIView
+from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.views import APIView
 
 from todolist.models import TodoItem
 from todolist.serializers import TodoItemSerializer
@@ -21,8 +23,20 @@ class TodoItemView(APIView):
         serializer = TodoItemSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(author=request.user)
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, pk=None, format=None):
+        try:
+            todo_item = TodoItem.objects.get(pk=pk, author=request.user)
+        except TodoItem.DoesNotExist:
+            return Response({'error': 'Todo item not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = TodoItemSerializer(todo_item, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
