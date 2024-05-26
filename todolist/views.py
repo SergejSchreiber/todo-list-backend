@@ -13,9 +13,16 @@ class TodoItemView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, format=None):
-        todos = TodoItem.objects.all()
+        todos = TodoItem.objects.filter(author=request.user)
         serializer = TodoItemSerializer(todos, many=True)
         return Response(serializer.data)
+
+    def post(self, request, format=None):
+        serializer = TodoItemSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(author=request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
 
 class LoginView(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
