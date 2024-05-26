@@ -38,6 +38,15 @@ class TodoItemView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, request, pk=None, format=None):
+        try:
+            todo_item = TodoItem.objects.get(pk=pk, author=request.user)
+        except TodoItem.DoesNotExist:
+            return Response({'error': 'Todo item not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        todo_item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class LoginView(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data,
